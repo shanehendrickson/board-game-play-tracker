@@ -645,6 +645,12 @@ function renderAddPlayView(gameId){
         .map(m => `<option value="${m}">${m}</option>`)
         .join("")
 
+    // need to get only expansions with a game id that matches current game
+    const expansionsMap = data.expansions
+        .filter(e=> e.gameId === gameId)
+        .map(e => `<option value="${e.id}">${e.name}</option>`)
+        .join("")
+
     
 
     app.innerHTML = `
@@ -664,7 +670,7 @@ function renderAddPlayView(gameId){
         <select id="modules-select" multiple size="5">${modulesMap}</select><br />
 
         <label for="expansions-select">Expansions: </label><br />
-        <select id="expansions-select" multiple size="5">TODO: expansionsMap</select><br />
+        <select id="expansions-select" multiple size="5">${expansionsMap}</select><br />
 
         <p class="button">
             <button type="submit" id="save-play-btn">Save Play</button>
@@ -690,7 +696,7 @@ function attachAddPlayHandlers(gameId){
     const playersSelect = document.getElementById("players-select")
     const antagonistsSelect = document.getElementById("antagonists-select")
     const modulesSelect = document.getElementById("modules-select")
-    // const expansionsSelect = document.getElementById("expansions-select")
+    const expansionsSelect = document.getElementById("expansions-select")
 
 
 
@@ -699,7 +705,7 @@ function attachAddPlayHandlers(gameId){
         const players = Array.from(playersSelect).filter(opt=>opt.selected).map(opt=>opt.value)
         const antagonists = Array.from(antagonistsSelect).filter(opt=>opt.selected).map(opt=>opt.value)
         const modules = Array.from(modulesSelect).filter(opt=>opt.selected).map(opt=>opt.value)
-        // const expansions = Array.from(expansionsSelect).filter(opt=>opt.selected).map(opt=>opt.value)
+        const expansions = Array.from(expansionsSelect).filter(opt=>opt.selected).map(opt=>opt.value)
         const newPlay = {
             id: crypto.randomUUID(),
             date: document.getElementById("date-input").value.trim(),
@@ -707,7 +713,7 @@ function attachAddPlayHandlers(gameId){
             players: players,
             antagonists: antagonists,
             modules: modules,
-            // expansions: expansions,
+            expansions: expansions,
         }
 
         savePlay(newPlay)
@@ -742,7 +748,7 @@ function renderPlayDetailView(playId){
     <p><strong>Players: </strong>${play.players.map(p=>getVal(data,"players",p).name).join(", ")}</p>
     <p><strong>Antagonists: </strong>${play.antagonists.join(", ")}</p>
     <p><strong>Modules: </strong>${play.modules.join(", ")}</p>
-    // <p><strong>Expansions: </strong>${play.expansions.join(", ")}</p>
+    <p><strong>Expansions: </strong>${play.expansions.map(e=>getVal(data, "expansions", e).name).join(", ")}</p>
 
     <div>
     <button type="button" id="back-btn">Back</button>
