@@ -2,9 +2,9 @@
 function renderNav(){
     const nav = document.getElementById("nav")
     nav.innerHTML = `
-        <button id="nav-games">Games</button>
-        <button id="nav-players">Players</button>
-        <button id="nav-plays">Plays</button>
+        <button type="button" id="nav-games">Games</button>
+        <button type="button" id="nav-players">Players</button>
+        <button type="button" id="nav-plays">Plays</button>
     `
     document.getElementById("nav-games").addEventListener("click",renderGameListView)
     document.getElementById("nav-players").addEventListener("click",renderPlayerListView)
@@ -26,7 +26,7 @@ function renderGameListView(){
     <ul id="game-list">
         ${data.games.map(g => `<li data-id="${g.id}">${g.name}</li>`).join("")}
     </ul>
-    <button id="add-game-btn">Add Game</button>
+    <button type="button" id="add-game-btn">Add Game</button>
     `
 
     document.getElementById("add-game-btn").addEventListener("click", ()=>{renderAddGameView()})
@@ -101,6 +101,9 @@ function renderAddGameView(){
 // function to create a Game object
 function attachAddGameHandlers() {
     const form = document.getElementById("add-game-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
     document.getElementById("cancel-btn").addEventListener("click", renderGameListView)
     //TODO - comes back and simplify designer, roles, and antagonists into a single function maybe
     //designer
@@ -163,7 +166,7 @@ function attachAddGameHandlers() {
         }
     })
 
-    //antagonists
+    //modules
     const moduleInput = document.getElementById("module-input");
     const modulesList = document.getElementById("modules-list");
     const addModuleBtn = document.getElementById("add-module-btn");
@@ -192,7 +195,7 @@ function attachAddGameHandlers() {
             roles,
             antagonists,
             modules,
-            expansionsIds: []
+            expansionIds: []
         }
         saveGame(newGame)
         renderGameListView()
@@ -210,7 +213,10 @@ function saveGame(game){
         plays: [],
     }
 
-    data.games.push(game)
+    const index = data.games.findIndex(g=>g.id===game.id)
+
+    if (index!==-1) data.games[index] = game
+    else data.games.push(game)
 
     localStorage.setItem("playTrackerData", JSON.stringify(data))
 }
@@ -236,21 +242,37 @@ function renderGameDetailView(gameId){
     <p><strong>Roles: </strong>${game.roles.join(", ")}</p>
     <p><strong>Antagonists: </strong>${game.antagonists.join(", ")}</p>
     <p><strong>Modules: </strong>${game.modules.join(", ")}</p>
+    <div id="expansions-section">
+        <p><strong>Expansions: </strong>
+        <ul id="expansions-list"></ul>
+    </div>
+    </p>
     <p>
         <button type="button" id="log-play-btn">Log Play</button>
     </p>
+    <button type="button" id="add-expansion-btn">Add Expansion</button>
 
     <div>
-    <button id="edit-btn">Edit Game</button>
-    <button id="back-btn">Back</button>
+    <button type="button" id="edit-btn">Edit Game</button>
+    <button type="button" id="back-btn">Back</button>
     </div>
     
     <hr>
 
-    <div>
-        <button type="button" id="del-game">Delete Game</button>
-    </div>
+
     `
+    
+    game.expansionIds.map(exid=>{
+        const li = document.createElement("li")
+        li.textContent = getVal(data, "expansions", exid).name
+        li.style.cursor = "pointer"
+        li.addEventListener("click", ()=>{
+            const expansionId = li.getAttribute("data-id")
+            renderExpansionDetailView(exid)
+        })
+        document.getElementById("expansions-list").appendChild(li)
+    })
+    document.getElementById("add-expansion-btn").addEventListener("click",()=>renderAddExpansionView(gameId))
     document.getElementById("log-play-btn").addEventListener("click",()=>renderAddPlayView(gameId))
     document.getElementById("back-btn").addEventListener("click", renderGameListView)
     document.getElementById("edit-btn").addEventListener("click", () => renderEditGameView(gameId) )
@@ -299,7 +321,7 @@ function renderEditGameView(gameId){
 
         <div class="button">
             <button type="submit">Save</button>
-            <button id="cancel-btn">Cancel</button>        
+            <button type="button" id="cancel-btn">Cancel</button>        
         </div>
 
 
@@ -317,6 +339,9 @@ function renderEditGameView(gameId){
 
 function attachEditGameHandlers(gameId){
     const form = document.getElementById("edit-game-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
     const data = JSON.parse(localStorage.getItem("playTrackerData"))
     const game = data.games.find(g => g.id === gameId)
     
@@ -455,7 +480,7 @@ function renderPlayerListView(){
     <ul id="player-list">
         ${data.players.map(p =>`<li data-id="${p.id}">${p.name}</li>`).join("")}
     </ul>
-    <button id="add-player-btn">Add Player</button>
+    <button type="button" id="add-player-btn">Add Player</button>
     `
 
     document.getElementById("add-player-btn").addEventListener("click",()=>{renderAddPlayerView()})
@@ -489,6 +514,9 @@ function renderAddPlayerView(){
 
 function attachAddPlayerHandlers(){
     const form = document.getElementById("add-player-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
 
     document.getElementById("cancel-btn").addEventListener("click", ()=>renderPlayerListView())
 
@@ -530,8 +558,8 @@ function renderPlayerDetailView(playerId){
     app.innerHTML = `
     <h2>${player.name}</h2>
     <p>Wins: 0 (TODO: get from logged plays)</p>
-    <button id="edit-btn">Edit Player</button>
-    <button id="back-btn">Back</button>
+    <button type="button" id="edit-btn">Edit Player</button>
+    <button type="button" id="back-btn">Back</button>
     `
 
     // edit player action
@@ -563,6 +591,9 @@ function renderEditPlayerView(playerId){
 
 function attachEditPlayerHandlers(playerId){
     const form = document.getElementById("edit-player-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
     const data = JSON.parse(localStorage.getItem("playTrackerData"))
     const player = data.players.find(g => g.id === playerId)
 
@@ -600,6 +631,8 @@ function renderAddPlayView(gameId){
     const data = JSON.parse(localStorage.getItem("playTrackerData"))
     const game = data.games.find(g => g.id === gameId)
 
+    
+
     const playersMap = data.players
         .map(p => `<option value="${p.id}">${p.name}</option>`)
         .join("")
@@ -612,9 +645,6 @@ function renderAddPlayView(gameId){
         .map(m => `<option value="${m}">${m}</option>`)
         .join("")
 
-    const expansionsMap = game.expansionIds
-        .map(e => `<option value="${e.id}">${e.name}</option>`)
-        .join("")
     
 
     app.innerHTML = `
@@ -634,7 +664,7 @@ function renderAddPlayView(gameId){
         <select id="modules-select" multiple size="5">${modulesMap}</select><br />
 
         <label for="expansions-select">Expansions: </label><br />
-        <select id="expansions-select" multiple size="5">${expansionsMap}</select><br />
+        <select id="expansions-select" multiple size="5">TODO: expansionsMap</select><br />
 
         <p class="button">
             <button type="submit" id="save-play-btn">Save Play</button>
@@ -642,45 +672,42 @@ function renderAddPlayView(gameId){
         </p>
     </form>
     `
-    //form needs:
-        
-        // for each player:
-            // role (optional)
-            // win/loss toggle
 
-    //save play button
-    //cancel button
-    //run handlers insertion function
-        //creates new play object
-        //pushes object into data.plays
-        //save
-        //navigate to game detail view or play detail view
+    const today = new Date().toISOString().split("T")[0]; 
+    document.getElementById("date-input").value = today;
 
     attachAddPlayHandlers(gameId)
 }
 
-/* ADD MODULES TO... 
-Game object in data model - modules: []
-newGame object in add game form - modules: []
-edit game form - modules: existingGame.modules || []
-saved data in local storage - already done with script
-*/
-
 function attachAddPlayHandlers(gameId){
     const form = document.getElementById("log-play-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
 
     document.getElementById("cancel-btn").addEventListener("click", ()=>renderGameDetailView(gameId))
 
+    const playersSelect = document.getElementById("players-select")
+    const antagonistsSelect = document.getElementById("antagonists-select")
+    const modulesSelect = document.getElementById("modules-select")
+    // const expansionsSelect = document.getElementById("expansions-select")
+
+
+
     form.addEventListener("submit", (event)=>{
         event.preventDefault()
+        const players = Array.from(playersSelect).filter(opt=>opt.selected).map(opt=>opt.value)
+        const antagonists = Array.from(antagonistsSelect).filter(opt=>opt.selected).map(opt=>opt.value)
+        const modules = Array.from(modulesSelect).filter(opt=>opt.selected).map(opt=>opt.value)
+        // const expansions = Array.from(expansionsSelect).filter(opt=>opt.selected).map(opt=>opt.value)
         const newPlay = {
             id: crypto.randomUUID(),
             date: document.getElementById("date-input").value.trim(),
             game: gameId,
-            players: "",
-            antagonists: "",
-            modules: "",
-            expansions: "",
+            players: players,
+            antagonists: antagonists,
+            modules: modules,
+            // expansions: expansions,
         }
 
         savePlay(newPlay)
@@ -710,16 +737,357 @@ function renderPlayDetailView(playId){
     }
 
     app.innerHTML = `
-    <p><strong>Game: </strong>${getVal(data, "games", play.game)}</p>
+    <p><strong>Game: </strong>${getVal(data, "games", play.game).name}</p>
     <p><strong>Date: </strong>${play.date}</p>
-    <p><strong>Players: </strong>${play.players}</p>
+    <p><strong>Players: </strong>${play.players.map(p=>getVal(data,"players",p).name).join(", ")}</p>
     <p><strong>Antagonists: </strong>${play.antagonists.join(", ")}</p>
     <p><strong>Modules: </strong>${play.modules.join(", ")}</p>
-    <p><strong>Expansions: </strong>${play.expansions.join(", ")}</p>
+    // <p><strong>Expansions: </strong>${play.expansions.join(", ")}</p>
+
+    <div>
+    <button type="button" id="back-btn">Back</button>
+    </div>
     `
+    document.getElementById("back-btn").addEventListener("click", renderPlayListView)
+
+}
+
+// EXPANSIONS
+// - 1. Add Expansion form
+// Name, Roles, Antagonists, Modules
+function renderAddExpansionView(gameId){
+    const app = document.getElementById("app")    
+
+    app.innerHTML = `
+    <h2>Add Expansion</h2>
+    <form id="add-expansion-form">            
+        <label for="expansion-input">Expansion Name: </label>
+        <input type="text" id="expansion-name-input" name="expansion_name" required>
+
+        <div id="roles-section">
+            <label for="role-input">Roles: </label>
+            <input type="text" id="role-input">
+            <button type="button" id="add-role-btn">Add Role</button>
+            <ul id="roles-list"></ul>
+        </div>
+
+        <div id="antagonists-section">
+            <label for="antagonist-input">Antagonists: </label>
+            <input type="text" id="antagonist-input">
+            <button type="button" id="add-antagonist-btn">Add Antagonist</button>
+            <ul id="antagonists-list"></ul>
+        </div>
+
+        <div id="modules-section">
+            <label for="module-input">Modules: </label>
+            <input type="text" id="module-input">
+            <button type="button" id="add-module-btn">Add Module</button>
+            <ul id="modules-list"></ul>
+        </div>
+
+        <p class="button">
+            <button type="submit">Save</button>
+            <button type="button" id="cancel-btn">Cancel</button>
+        </p>
+    </form>
+    `
+
+    attachAddExpansionHandlers(gameId)
+}
+
+// - 2. Expansion object creation
+/* 
+id:
+gameId: a direct reference to the game it lives under
+name:
+antagonists: []
+modules: []
+roles: []
+*/
+function attachAddExpansionHandlers(gameId){
+    const form = document.getElementById("add-expansion-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
+    const data = JSON.parse(localStorage.getItem("playTrackerData"))
+    const game = data.games.find(g => g.id === gameId)
+    document.getElementById("cancel-btn").addEventListener("click", ()=>{renderGameDetailView(gameId)})
+        //roles
+    const roleInput = document.getElementById("role-input");
+    const rolesList = document.getElementById("roles-list");
+    const addRoleBtn = document.getElementById("add-role-btn");
+    const roles = [];
+    addRoleBtn.addEventListener("click", ()=> {
+        //make sure not empty
+        const newRole = roleInput.value.trim()
+        if (newRole!=""){
+            roles.push(newRole)
+            const li = document.createElement("li")
+            li.textContent = newRole
+            rolesList.appendChild(li)
+            roleInput.value = ""
+        }
+    })
+
+    //antagonists
+    const antagonistInput = document.getElementById("antagonist-input");
+    const antagonistsList = document.getElementById("antagonists-list");
+    const addAntagonistBtn = document.getElementById("add-antagonist-btn");
+    const antagonists = [];
+    addAntagonistBtn.addEventListener("click", ()=> {
+        //make sure not empty
+        const newAntagonist = antagonistInput.value.trim()
+        if (newAntagonist!=""){
+            antagonists.push(newAntagonist)
+            const li = document.createElement("li")
+            li.textContent = newAntagonist
+            antagonistsList.appendChild(li)
+            antagonistInput.value = ""
+        }
+    })
+
+    //modules
+    const moduleInput = document.getElementById("module-input");
+    const modulesList = document.getElementById("modules-list");
+    const addModuleBtn = document.getElementById("add-module-btn");
+    const modules = [];
+    addModuleBtn.addEventListener("click", ()=> {
+        //make sure not empty
+        const newModule = moduleInput.value.trim()
+        if (newModule!=""){
+            modules.push(newModule)
+            const li = document.createElement("li")
+            li.textContent = newModule
+            modulesList.appendChild(li)
+            moduleInput.value = ""
+        }
+    })
+
+    //submit expansion
+    form.addEventListener("submit", (event)=> {
+        event.preventDefault()
+        //build expansion object
+        const newExpansion = {
+            id: crypto.randomUUID(),
+            gameId: gameId,
+            name: document.getElementById("expansion-name-input").value.trim(),
+            roles,
+            antagonists,
+            modules
+        }
+        game.expansionIds.push(newExpansion.id)
+        saveGame(game)        
+        saveExpansion(newExpansion)
+        renderGameDetailView(gameId)
+    })
+}
+
+function saveExpansion(expansion){
+        const data = JSON.parse(localStorage.getItem("playTrackerData")) || {
+        games: [],
+        expansions: [],
+        players: [],
+        plays: [],
+    }
+
+    data.expansions.push(expansion)
+    localStorage.setItem("playTrackerData", JSON.stringify(data))
+}
+
+function renderExpansionDetailView(expansionId){
+    const app = document.getElementById("app")
+    const data = JSON.parse(localStorage.getItem("playTrackerData"))
+    const expansion = data.expansions.find(e=>e.id===expansionId)    
+    const game = getVal(data, "games", expansion.gameId)
+
+    app.innerHTML = `
+    <h2>${game.name}</h2>
+    <h3>${expansion.name}</h3>
+    <p><strong>Roles: </strong>${expansion.roles.join(", ")}</p>
+    <p><strong>Antagonists: </strong>${expansion.antagonists.join(", ")}</p>
+    <p><strong>Modules: </strong>${expansion.modules.join(", ")}</p>
+    <div>
+    <button type="button" id="edit-btn">Edit Expansion</button>
+    <button type="button" id="back-btn">Back</button>
+    </div>
+    `
+    document.getElementById("back-btn").addEventListener("click", ()=>renderGameDetailView(expansion.gameId))
+    document.getElementById("edit-btn").addEventListener("click", () => renderEditExpansionView(expansionId) )
+}
+
+function renderEditExpansionView(expansionId){
+    const app = document.getElementById("app")
+    const data = JSON.parse(localStorage.getItem("playTrackerData"))
+    const expansion = data.expansions.find(g => g.id === expansionId)
+    app.innerHTML = `
+    <h2>${expansion.name}</h2>
+    <form id="edit-expansion-form">
+        <label for="expansion-input">expansion: </label>
+        <input type="text" id="expansion-name-input" name="expansion_name" value="${expansion.name}" required>
+
+        <div id="roles-section">
+            <label for="role-input">Roles: </label>
+            <input type="text" id="role-input">
+            <button type="button" id="add-role-btn">Add Role</button>
+            <ul id="roles-list"></ul>
+        </div>
+
+        <div id="antagonists-section">
+            <label for="antagonist-input">Antagonists: </label>
+            <input type="text" id="antagonist-input">
+            <button type="button" id="add-antagonist-btn">Add Antagonist</button>
+            <ul id="antagonists-list"></ul>
+        </div>
+
+        <div id="modules-section">
+            <label for="module-input">Modules: </label>
+            <input type="text" id="module-input">
+            <button type="button" id="add-module-btn">Add Module</button>
+            <ul id="modules-list"></ul>
+        </div>
+
+        <div class="button">
+            <button type="submit">Save</button>
+            <button type="button" id="cancel-btn">Cancel</button>        
+        </div>
+    </form>
+    `
+    document.getElementById("cancel-btn").addEventListener("click", ()=>renderExpansionDetailView(expansionId))
+    attachEditExpansionHandlers(expansionId)
+}
+
+function attachEditExpansionHandlers(expansionId){
+    const form = document.getElementById("edit-expansion-form")
+    form.addEventListener("keydown", (event)=> {
+        if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") event.preventDefault()
+    })
+    const data = JSON.parse(localStorage.getItem("playTrackerData"))
+    const expansion = data.expansions.find(f => f.id === expansionId)
+
+    //roles
+    const roleInput = document.getElementById("role-input");
+    const rolesList = document.getElementById("roles-list");
+    const addRoleBtn = document.getElementById("add-role-btn");
+    const roles = [...expansion.roles];
+    roles.forEach(r=>{
+        const li = document.createElement("li")
+        li.textContent = r
+        rolesList.appendChild(li)
+    })
+    addRoleBtn.addEventListener("click", ()=> {
+        //make sure not empty
+        const newRole = roleInput.value.trim()
+        if (newRole!=""){
+            roles.push(newRole)
+            const li = document.createElement("li")
+            li.textContent = newRole
+            rolesList.appendChild(li)
+            roleInput.value = ""
+        }
+    })
+
+    //antagonists
+    const antagonistInput = document.getElementById("antagonist-input");
+    const antagonistsList = document.getElementById("antagonists-list");
+    const addAntagonistBtn = document.getElementById("add-antagonist-btn");
+    const antagonists = [...expansion.antagonists];
+    antagonists.forEach(a=>{
+        const li = document.createElement("li")
+        li.textContent = a
+        antagonistsList.appendChild(li)
+    })
+    addAntagonistBtn.addEventListener("click", ()=> {
+        //make sure not empty
+        const newAntagonist = antagonistInput.value.trim()
+        if (newAntagonist!=""){
+            antagonists.push(newAntagonist)
+            const li = document.createElement("li")
+            li.textContent = newAntagonist
+            antagonistsList.appendChild(li)
+            antagonistInput.value = ""
+        }
+    })
+    //modules
+    const moduleInput = document.getElementById("module-input");
+    const modulesList = document.getElementById("modules-list");
+    const addModuleBtn = document.getElementById("add-module-btn");
+    const modules = [...expansion.modules];
+    modules.forEach(a=>{
+        const li = document.createElement("li")
+        li.textContent = a
+        modulesList.appendChild(li)
+    })
+    addModuleBtn.addEventListener("click", ()=> {
+        //make sure not empty
+        const newModule = moduleInput.value.trim()
+        if (newModule!=""){
+            modules.push(newModule)
+            const li = document.createElement("li")
+            li.textContent = newModule
+            modulesList.appendChild(li)
+            moduleInput.value = ""
+        }
+    })
+
+    form.addEventListener("submit", (event)=>{
+        event.preventDefault()
+
+        //update expansion object
+        expansion.name = document.getElementById("expansion-name-input").value.trim()        
+        expansion.roles = roles
+        expansion.antagonists = antagonists
+        expansion.modules = modules
+
+        localStorage.setItem("playTrackerData", JSON.stringify(data))
+        renderExpansionDetailView(expansionId)
+
+    })
+}
+
+function initData(){
+    const raw = localStorage.getItem("playTrackerData")
+    let data
+    
+    try {
+        data = raw ? JSON.parse(raw) : null
+    } catch {
+        data = null
+    }
+
+    // Define data shape
+    const defaultShape = {
+        games: [],
+        expansions: [],
+        players: [],
+        plays: []
+    }
+
+    // Check structure
+    if (!data || typeof data !== "object"){
+        localStorage.setItem("playTrackerData", JSON.stringify(defaultShape))
+        return defaultShape
+    }
+
+    let changed = false
+    for (const key in defaultShape){
+        if (!Array.isArray(data[key])) {
+            data[key] = []
+            changed = true
+        }
+    }
+
+    if (changed) localStorage.setItem("playTrackerData", JSON.stringify(data))
+    return data
 }
 
 //* RUN THE APP
-// renderPlayerListView()
-renderNav()
-renderGameListView()
+function runGameTracker(){
+    initData()
+    renderNav()
+    renderGameListView()
+}
+
+runGameTracker()
+
+
+
