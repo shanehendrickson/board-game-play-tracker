@@ -8,7 +8,7 @@ function renderNav(){
     `
     document.getElementById("nav-games").addEventListener("click",renderGameListView)
     document.getElementById("nav-players").addEventListener("click",renderPlayerListView)
-    document.getElementById("nav-plays").addEventListener("click",renderPlayListView)
+    document.getElementById("nav-plays").addEventListener("click",renderSessionListView)
 }
 
 function getVal(data, model, id){
@@ -17,27 +17,7 @@ function getVal(data, model, id){
 
 //* GAMES
 // a Game List view for confirmation
-function renderGameListView(){
-    const app = document.getElementById("app")
-    const data = JSON.parse(localStorage.getItem("playTrackerData") || { games: []})
 
-    app.innerHTML = `
-    <h2>Games</h2>
-    <ul id="game-list">
-        ${data.games.map(g => `<li data-id="${g.id}">${g.name}</li>`).join("")}
-    </ul>
-    <button type="button" id="add-game-btn">Add Game</button>
-    `
-
-    document.getElementById("add-game-btn").addEventListener("click", ()=>{renderAddGameView()})
-    document.querySelectorAll("#game-list li").forEach(li=>{
-        li.style.cursor = "pointer"
-        li.addEventListener("click", ()=>{
-            const gameId = li.getAttribute("data-id")
-            renderGameDetailView(gameId)
-        })
-    })
-}
 
 // add a simple Add Game form
 function renderAddGameView(){
@@ -210,7 +190,7 @@ function saveGame(game){
         games: [],
         expansions: [],
         players: [],
-        plays: [],
+        sessions: [],
     }
 
     const index = data.games.findIndex(g=>g.id===game.id)
@@ -273,7 +253,7 @@ function renderGameDetailView(gameId){
         document.getElementById("expansions-list").appendChild(li)
     })
     document.getElementById("add-expansion-btn").addEventListener("click",()=>renderAddExpansionView(gameId))
-    document.getElementById("log-play-btn").addEventListener("click",()=>renderAddPlayView(gameId))
+    document.getElementById("log-play-btn").addEventListener("click",()=>renderAddSessionView(gameId))
     document.getElementById("back-btn").addEventListener("click", renderGameListView)
     document.getElementById("edit-btn").addEventListener("click", () => renderEditGameView(gameId) )
 }
@@ -471,27 +451,6 @@ function attachEditGameHandlers(gameId){
 //* PLAYERS
 // Player data shape: {id: unique id, name: string, preferred color: string, notes: string}
 
-function renderPlayerListView(){
-    const app = document.getElementById("app")
-    const data = JSON.parse(localStorage.getItem("playTrackerData") || { players: []})
-
-    app.innerHTML = `
-    <h2>Players</h2>
-    <ul id="player-list">
-        ${data.players.map(p =>`<li data-id="${p.id}">${p.name}</li>`).join("")}
-    </ul>
-    <button type="button" id="add-player-btn">Add Player</button>
-    `
-
-    document.getElementById("add-player-btn").addEventListener("click",()=>{renderAddPlayerView()})
-    document.querySelectorAll("#player-list li").forEach(li=>{
-        li.style.cursor = "pointer"
-        li.addEventListener("click", ()=>{
-            const playerId = li.getAttribute("data-id")
-            renderPlayerDetailView(playerId)
-        })
-    })
-}
 
 // add player view
 function renderAddPlayerView(){
@@ -538,7 +497,7 @@ function savePlayer(player){
         games: [],
         expansions: [],
         players: [],
-        plays: [],
+        sessions: [],
     }
 
     data.players.push(player)
@@ -607,26 +566,7 @@ function attachEditPlayerHandlers(playerId){
     })
 }
 
-function renderPlayListView(){
-    const app = document.getElementById("app")
-    const data = JSON.parse(localStorage.getItem("playTrackerData"))
-
-    app.innerHTML = `
-    <h2>Logged Plays</h2>
-    <ul id="play-list">
-        ${data.plays.map(p=>`<li data-id="${p.id}">${getVal(data, "games", p.game).name} - ${p.date}</li>`)}
-    </ul>
-    `
-    document.querySelectorAll("#play-list li").forEach(li=>{
-        li.style.curosr = "pointer"
-        li.addEventListener("click", ()=>{
-            const playId = li.getAttribute("data-id")
-            renderPlayDetailView(playId)
-        })
-    })
-}
-
-function renderAddPlayView(gameId){
+function renderAddSessionView(gameId){
     const app = document.getElementById("app")
     const data = JSON.parse(localStorage.getItem("playTrackerData"))
     const game = data.games.find(g => g.id === gameId)
@@ -726,14 +666,14 @@ function savePlay(play){
         games: [],
         expansions: [],
         players: [],
-        plays: [],
+        sessions: [],
     }
 
     data.plays.push(play)
     localStorage.setItem("playTrackerData", JSON.stringify(data))
 }
 
-function renderPlayDetailView(playId){
+function renderSessionDetailView(playId){
     const app = document.getElementById("app")
     const data = JSON.parse(localStorage.getItem("playTrackerData"))
     const play = data.plays.find(p => p.id === playId)
@@ -754,7 +694,7 @@ function renderPlayDetailView(playId){
     <button type="button" id="back-btn">Back</button>
     </div>
     `
-    document.getElementById("back-btn").addEventListener("click", renderPlayListView)
+    document.getElementById("back-btn").addEventListener("click", renderSessionListView)
 
 }
 
@@ -893,7 +833,7 @@ function saveExpansion(expansion){
         games: [],
         expansions: [],
         players: [],
-        plays: [],
+        sessions: [],
     }
 
     data.expansions.push(expansion)
@@ -1050,6 +990,69 @@ function attachEditExpansionHandlers(expansionId){
     })
 }
 
+//* RENDER LIST VIEWS
+function renderListView({ title, items, onSelect, onAdd }) {
+    const app = document.getElementById("app")
+    app.innerHTML = ""
+
+    const h2 = document.createElement("h2")
+    h2.textContent = title
+    app.appendChild(h2)
+
+    // list all items
+    const ul = document.createElement("ul")
+    items.forEach(item => {
+        const li = document.createElement("li")
+        li.textContent = item.name
+        li.dataset.id = item.id
+        li.style.cursor = "pointer"
+        li.addEventListener("click", ()=>onSelect(item.id))
+        ul.appendChild(li)
+    })
+    app.appendChild(ul)
+
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.textContent = `Add ${title.slice(0, -1)}`
+    btn.addEventListener("click", onAdd)
+    app.appendChild(btn)
+}
+
+//* List View Routers
+function renderGameListView(){
+    const data = getData();
+    renderListView({
+        title: "Games",
+        items: data.games,
+        onSelect: renderGameDetailView,
+        onAdd: renderAddGameView
+    })
+}
+
+function renderPlayerListView(){
+    const data = getData()
+    renderListView({
+        title: "Players",
+        items: data.players,
+        onSelect: renderPlayerDetailView,
+        onAdd: renderAddPlayerView
+    })
+}
+
+function renderSessionListView(){
+    const data = getData(
+        renderListView({
+            title: "Sessions",
+            items: data.sessions,
+            onSelect: renderSessionDetailView,
+            onAdd: renderAddSessionView
+        })
+    )
+}
+
+
+
+//* HANDLE DATA
 function initData(){
     const raw = localStorage.getItem("playTrackerData")
     let data
@@ -1061,21 +1064,21 @@ function initData(){
     }
 
     // Define data shape
-    const defaultShape = {
+    const dataShape = {
         games: [],
         expansions: [],
         players: [],
-        plays: []
+        sessions: [],
     }
 
     // Check structure
     if (!data || typeof data !== "object"){
-        localStorage.setItem("playTrackerData", JSON.stringify(defaultShape))
-        return defaultShape
+        localStorage.setItem("playTrackerData", JSON.stringify(dataShape))
+        return dataShape
     }
 
     let changed = false
-    for (const key in defaultShape){
+    for (const key in dataShape){
         if (!Array.isArray(data[key])) {
             data[key] = []
             changed = true
@@ -1084,6 +1087,20 @@ function initData(){
 
     if (changed) localStorage.setItem("playTrackerData", JSON.stringify(data))
     return data
+}
+
+function getData(){
+    return JSON.parse(localStorage.getItem("playTrackerData"))
+}
+
+function saveData(model, item){
+    const data = JSON.parse(localStorage.getItem("playTrackerData"))
+    const index = data[model].findIndex(i=>i.id===item.id)
+
+    if (index !== -1) data[model][index] = item
+    else data[model].push(item)
+
+    localStorage.setItem("playTrackerData", JSON.stringify(data))
 }
 
 //* RUN THE APP
