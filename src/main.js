@@ -74,58 +74,7 @@ function populateListField(containerId, items, label){
 }
 
 
-// add a game detail view
-function renderGameDetailView(gameId){
-    const app = document.getElementById("app")
-    const data = JSON.parse(localStorage.getItem("playTrackerData"))
-    const game = data.games.find(g => g.id === gameId)
-    if (!game) {
-        app.innerHTML = `<p>Game not found.</p>`;
-        return
-    }
 
-    app.innerHTML = `
-    <h2>${game.name}</h2>
-    <p><strong>Publisher: </strong>${game.publisher}</p>
-    <p><strong>Designed by: </strong>${game.designers.join(", ")}</p>
-    <p><strong>Roles: </strong>${game.roles.join(", ")}</p>
-    <p><strong>Antagonists: </strong>${game.antagonists.join(", ")}</p>
-    <p><strong>Modules: </strong>${game.modules.join(", ")}</p>
-    <div id="expansions-section">
-        <p><strong>Expansions: </strong>
-        <ul id="expansions-list"></ul>
-    </div>
-    </p>
-    <p>
-        <button type="button" id="log-play-btn">Log Play</button>
-    </p>
-    <button type="button" id="add-expansion-btn">Add Expansion</button>
-
-    <div>
-    <button type="button" id="edit-btn">Edit Game</button>
-    <button type="button" id="back-btn">Back</button>
-    </div>
-    
-    <hr>
-
-
-    `
-    const expansionIds = game.expansionIds || []
-    expansionIds.map(exid=>{
-        const li = document.createElement("li")
-        li.textContent = getVal(data, "expansions", exid).name
-        li.style.cursor = "pointer"
-        li.addEventListener("click", ()=>{
-            const expansionId = li.getAttribute("data-id")
-            renderExpansionDetailView(exid)
-        })
-        document.getElementById("expansions-list").appendChild(li)
-    })
-    document.getElementById("add-expansion-btn").addEventListener("click",()=>renderAddExpansionView(gameId))
-    document.getElementById("log-play-btn").addEventListener("click",()=>renderAddSessionView(gameId))
-    document.getElementById("back-btn").addEventListener("click", renderGameListView)
-    document.getElementById("edit-btn").addEventListener("click", () => renderGameFormView("edit", gameId) )
-}
 
 //* RENDER LIST VIEWS
 function renderListView({ title, items, onSelect, onAdd }) {
@@ -172,7 +121,7 @@ function renderPlayerListView(){
         title: "Players",
         items: data.players,
         onSelect: renderPlayerDetailView,
-        onAdd: renderAddPlayerView
+        onAdd: renderPlayerFormView
     })
 }
 
@@ -182,7 +131,7 @@ function renderSessionListView(){
             title: "Sessions",
             items: data.sessions,
             onSelect: renderSessionDetailView,
-            onAdd: renderAddSessionView
+            onAdd: renderSessionFormView
         })
     )
 }
@@ -298,6 +247,144 @@ function attachGameFormHandlers( game, lists){
     })
 }
 
+// add a game detail view
+function renderGameDetailView(gameId){
+    const app = document.getElementById("app")
+    const data = getData()
+    const game = data.games.find(g => g.id === gameId)
+    if (!game) {
+        app.innerHTML = `<p>Game not found.</p>`;
+        return
+    }
+
+    app.innerHTML = `
+    <h2>${game.name}</h2>
+    <p><strong>Publisher: </strong>${game.publisher}</p>
+    <p><strong>Designed by: </strong>${game.designers.join(", ")}</p>
+    <p><strong>Roles: </strong>${game.roles.join(", ")}</p>
+    <p><strong>Antagonists: </strong>${game.antagonists.join(", ")}</p>
+    <p><strong>Modules: </strong>${game.modules.join(", ")}</p>
+    <div id="expansions-section">
+        <p><strong>Expansions: </strong>
+        <ul id="expansions-list"></ul>
+    </div>
+    </p>
+    <p>
+        <button type="button" id="log-play-btn">Log Play</button>
+    </p>
+    <button type="button" id="add-expansion-btn">Add Expansion</button>
+
+    <div>
+    <button type="button" id="edit-btn">Edit Game</button>
+    <button type="button" id="back-btn">Back</button>
+    </div>
+    
+    <hr>
+
+
+    `
+    const expansionIds = game.expansionIds || []
+    expansionIds.map(exid=>{
+        const li = document.createElement("li")
+        li.textContent = getVal(data, "expansions", exid).name
+        li.style.cursor = "pointer"
+        li.addEventListener("click", ()=>{
+            const expansionId = li.getAttribute("data-id")
+            renderExpansionDetailView(exid)
+        })
+        document.getElementById("expansions-list").appendChild(li)
+    })
+    document.getElementById("add-expansion-btn").addEventListener("click",()=>renderAddExpansionView(gameId))
+    document.getElementById("log-play-btn").addEventListener("click",()=>renderAddSessionView(gameId))
+    document.getElementById("back-btn").addEventListener("click", renderGameListView)
+    document.getElementById("edit-btn").addEventListener("click", () => renderGameFormView("edit", gameId) )
+}
+
+//* PLAYERS
+function renderPlayerFormView(mode, playerId){
+    const data = getData()
+
+    //check for existing player, retrieve or create
+    const player = mode === "edit"
+    ? data.players.find(p=>p.id === playerId)
+    : {
+        id: crypto.randomUUID(),
+        name: "",
+    }
+
+    const app = document.getElementById("app")
+    app.innerHTML = ""
+
+    const h2 = document.createElement("h2")
+    h2.textContent = mode == "edit" ? "Edit Player" : "New Player"
+    app.appendChild(h2)
+
+    const nameLabel = document.createElement("label")
+    nameLabel.textContent = "Player Name: "
+    const nameInput = document.createElement("input")
+    nameInput.id = "player-name-input"
+    nameInput.value = player.name
+    app.appendChild(nameLabel)
+    app.appendChild(nameInput)
+
+    const saveBtn = document.createElement("button")
+    saveBtn.type = "button"
+    saveBtn.textContent = mode === "edit" ? "Save Changes" : "Add Player"
+    saveBtn.id = "save-game-btn"
+    app.appendChild(saveBtn)
+    
+    const cancelBtn = document.createElement("button")
+    cancelBtn.type = "button"
+    cancelBtn.textContent = "Cancel"
+    cancelBtn.addEventListener("click", ()=>{
+        if (mode === "edit") renderPlayerDetailView(player.id)
+        else renderPlayerListView()
+    })
+    app.appendChild(cancelBtn) 
+    
+    attachPlayerFormHandlers( player )
+}
+
+function attachPlayerFormHandlers( player){
+    const saveBtn = document.getElementById("save-game-btn")
+    saveBtn.addEventListener("click", () => {
+        player.name = document.getElementById("player-name-input").value.trim()
+
+        saveData("players", player)
+        renderPlayerDetailView(player.id)
+    })
+}
+
+function renderPlayerDetailView(playerId){
+    const app = document.getElementById("app")
+    const data = getData()
+
+    // TODO - get sessions
+    // create array with sessions.filter => session players.some where playerId matches
+    // get length of total sessions array
+
+    // set up counts upject for palys of specific games
+    // loop through above array and check game id
+    // add new or increment if exists
+    // sotre in variable: sort through with an object.entries .sort((a,b) => b[1] - a[1])[0]?.[0]
+    // get the game from the one with the highest count
+
+    const player = data.players.find(p => p.id === playerId)
+    if (!player) {
+        app.innerHTML = "<p>Player not found.</p>"
+        return
+    }
+
+    app.innerHTML = `
+    <h2>${player.name}</h2>
+    <div>
+    <button type="button" id="edit-btn">Edit Player</button>
+    <button type="button" id="back-btn">Back</button>
+    </div>
+    `
+    document.getElementById("back-btn").addEventListener("click", renderPlayerListView)
+    document.getElementById("edit-btn").addEventListener("click", () => renderPlayerFormView("edit", playerId) )
+}
 
 
 //* HANDLE DATA
@@ -342,7 +429,7 @@ function getData(){
 }
 
 function saveData(model, item){
-    const data = JSON.parse(localStorage.getItem("playTrackerData"))
+    const data = getData()
     const index = data[model].findIndex(i=>i.id===item.id)
 
     if (index !== -1) data[model][index] = item
