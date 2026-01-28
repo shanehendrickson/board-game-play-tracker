@@ -15,6 +15,11 @@ function getVal(data, model, id){
     return data[model].find(m=>m.id === id)    
 }
 
+function checkDuplicate(data, model, item, check){
+    return data[model].find((i)=>i[check].toLowerCase() === item[check].toLowerCase())
+
+}
+
 function populateTextField(){}
 
 
@@ -294,8 +299,8 @@ function renderGameDetailView(gameId){
         })
         document.getElementById("expansions-list").appendChild(li)
     })
-    document.getElementById("add-expansion-btn").addEventListener("click",()=>renderAddExpansionView(gameId))
-    document.getElementById("log-play-btn").addEventListener("click",()=>renderAddSessionView(gameId))
+    document.getElementById("add-expansion-btn").addEventListener("click",()=>renderExpansionFormView(gameId))
+    document.getElementById("log-play-btn").addEventListener("click",()=>renderSessionFormView("add", null, gameId))
     document.getElementById("back-btn").addEventListener("click", renderGameListView)
     document.getElementById("edit-btn").addEventListener("click", () => renderGameFormView("edit", gameId) )
 }
@@ -384,6 +389,111 @@ function renderPlayerDetailView(playerId){
     `
     document.getElementById("back-btn").addEventListener("click", renderPlayerListView)
     document.getElementById("edit-btn").addEventListener("click", () => renderPlayerFormView("edit", playerId) )
+}
+
+//* SESSIONS
+function renderSessionFormView(mode, sessionId, gameId){
+    const data = getData()
+    let session
+    
+
+    if (mode === "edit") {
+        session = data.sessions.find(s => s.id === sessionId)
+        gameId = session.gameId
+    } else {
+        session = {
+            id: crypto.randomUUID(),
+            gameId: gameId,
+            date: "",
+            participants: [],
+            antagonistsUsed: [],
+            modulesUsed: [],
+            expansionsUsed: []
+        }
+    }
+
+    const game = data.games.find(g => g.id === gameId)
+
+    const app = document.getElementById("app")
+    app.innerHTML = ""
+
+    const h2 = document.createElement("h2")
+    h2.textContent = mode == "edit" ? "Edit Session" : `Log New ${game.name} Session`
+    app.appendChild(h2)
+
+    // DATE
+    const dateLabel = document.createElement("label")
+    dateLabel.textContent = "Date: "
+    const dateInput = document.createElement("input")
+    dateInput.id = "date-input"
+    dateInput.type = "date"
+    dateInput.value = session.date || new Date().toISOString().slice(0,10)
+    app.appendChild(dateLabel)
+    app.appendChild(dateInput)
+
+    // PARTICIPANTS
+    const participantsContainer = document.createElement("div")
+    participantsContainer.id = "participants-container"
+    app.appendChild(participantsContainer)
+
+    renderParticipantsSelector(
+        participantsContainer,
+        session.participants,
+        data.players,
+        game.roles
+    )
+
+    // SAVE / CANCEL
+    
+}
+
+function renderParticipantsSelector(container, participants, players, gameRoles) {
+    container.innerHTML = "<h3>Participants</h3>"
+
+    const addBtn = document.createElement("button")
+    addBtn.type = "button"
+    addBtn.textContent = "Add Participant"
+    container.appendChild(addBtn)
+
+    // div for participants list
+    const list = document.createElement("div")
+    container.appendChild(list)
+
+    function renderList(){
+        list.innerHTML = ""
+
+        participants.forEach((p, index) => {
+            const row = document.createElement("div")
+
+            // Player Select
+            const playerSelect = document.createElement("select")
+            players.forEach(pl => {
+                const opt = document.createElement("option")
+                opt.value = pl.id
+                opt.textContent = pl.name
+                if (pl.id === p.playerId) opt.selected = true
+                playerSelect.appendChild(opt)
+            })
+            playerSelect.addEventListener("change", ()=>{
+                p.playerId = playerSelect.value
+            })
+            row.appendChild(playerSelect)
+
+            list.appendChild(row)
+        })
+    }
+
+    addBtn.addEventListener("click", () => {
+        participants.push({
+            playerId: players[0]?.id || "",
+            roles: [],
+            aliases: []
+        })
+        renderList()
+    })
+
+
+    renderList()
 }
 
 
