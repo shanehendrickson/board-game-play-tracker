@@ -4,11 +4,11 @@ function renderNav(){
     nav.innerHTML = `
         <button type="button" id="nav-games">Games</button>
         <button type="button" id="nav-players">Players</button>
-        <button type="button" id="nav-plays">Plays</button>
+        <button type="button" id="nav-sessions">Sessions</button>
     `
     document.getElementById("nav-games").addEventListener("click",renderGameListView)
     document.getElementById("nav-players").addEventListener("click",renderPlayerListView)
-    document.getElementById("nav-plays").addEventListener("click",renderSessionListView)
+    document.getElementById("nav-sessions").addEventListener("click",renderSessionListView)
 }
 
 function getVal(data, model, id){
@@ -45,6 +45,7 @@ function populateListField(containerId, items, label){
 
     //ul
     const ul = document.createElement("ul")
+
     container.appendChild(ul)
 
     //render list function
@@ -52,6 +53,7 @@ function populateListField(containerId, items, label){
         ul.innerHTML = ""
         items.forEach((item, index)=> {
             const li = document.createElement("li")
+
             li.textContent = item
 
             const removeBtn = document.createElement("button")
@@ -82,7 +84,7 @@ function populateListField(containerId, items, label){
 
 
 //* RENDER LIST VIEWS
-function renderListView({ title, items, onSelect, onAdd }) {
+function renderListView({ title, items, onSelect, onAdd, getLabel }) {
     const app = document.getElementById("app")
     app.innerHTML = ""
 
@@ -92,9 +94,11 @@ function renderListView({ title, items, onSelect, onAdd }) {
 
     // list all items
     const ul = document.createElement("ul")
+    ul.classList.add("list-view")
     items.forEach(item => {
         const li = document.createElement("li")
-        li.textContent = item.name
+        li.classList.add("list-item")
+        li.textContent = getLabel ? getLabel(item) : item.name
         li.dataset.id = item.id
         li.style.cursor = "pointer"
         li.addEventListener("click", ()=>onSelect(item.id))
@@ -131,14 +135,18 @@ function renderPlayerListView(){
 }
 
 function renderSessionListView(){
-    const data = getData(
+    const data = getData()
         renderListView({
             title: "Sessions",
             items: data.sessions,
+            getLabel: session => { 
+                const game = data.games.find(g => g.id === session.gameId) 
+                const date = session.date || "(no date)" 
+                return `${game.name} — ${date}` 
+            },            
             onSelect: renderSessionDetailView,
             onAdd: renderSessionFormView
         })
-    )
 }
 
 function renderGameFormView(mode, gameId){
@@ -443,8 +451,50 @@ function renderSessionFormView(mode, sessionId, gameId){
         game.roles
     )
 
+    // ANTAGONISTS
+    const antagonistsContainer = document.createElement("div")
+    antagonistsContainer.id = "antagonists-container"
+    app.appendChild(antagonistsContainer)
+
+    renderMultiSelect(
+        antagonistsContainer,
+        "Antagonists Used",
+        session.antagonistsUsed,
+        game.antagonists
+    )
+
+    // MODULES
+    const modulesContainer = document.createElement("div")
+    modulesContainer.id = "modules-container"
+    app.appendChild(modulesContainer)
+
+    // EXPANSIONS
+    const expansionsContainer = document.createElement("div")
+    expansionsContainer.id = "expansions-container"
+    app.appendChild(expansionsContainer)
+
     // SAVE / CANCEL
-    
+    const saveBtn = document.createElement("button")
+    saveBtn.type = "button"
+    saveBtn.textContent = mode === "edit" ? "Save Changes" : "Add Session"
+    saveBtn.id = "save-session-btn"
+    app.appendChild(saveBtn)
+
+    const cancelBtn = document.createElement("button")
+    cancelBtn.type = "button"
+    cancelBtn.textContent = "Cancel"
+    cancelBtn.addEventListener("click", () => {
+        if (mode === "edit") {
+            renderSessionDetailView(session.id)
+        } else {
+            renderGameDetailView(gameId)
+        }
+    })
+    app.appendChild(cancelBtn)
+
+    attachSessionFormHandlers(mode, session, {
+        dateInput
+    })
 }
 
 function renderParticipantsSelector(container, participants, players, gameRoles) {
@@ -496,6 +546,49 @@ function renderParticipantsSelector(container, participants, players, gameRoles)
     renderList()
 }
 
+function renderMultiSelect(container, label, selectedArray, options){
+    container.innerHTML = `<h3>${label}</h3>`
+
+    const select = document.createElement("select")
+    select.multiple = true
+
+    options.forEach((opt) => {
+        const value = opt.id || opt
+        const text = opt.name || opt
+        const option = document.createElement("option")
+        option.value = value
+        option.text = text
+        if (selectedArray.includes(value)) option.selected = true
+        select.appendChild(option)
+    })
+
+    select.addEventListener("change", () => {
+        selectedArray.length = 0
+        selectedArray.push(...Array.from(select.selectedOptions).map(o => o.value))
+    })
+
+    container.appendChild(select)
+}
+
+function attachSessionFormHandlers(mode, session, fields){
+    const saveBtn = document.getElementById("save-session-btn")
+
+    saveBtn.addEventListener("click", () => {
+        session.date = fields.dateInput.value.trim()
+
+        saveData("sessions", session)
+
+        if (mode === "edit") {
+            renderSessionDetailView(session.id)
+        } else {
+            renderGameDetailView(session.gameId)
+        }
+    })
+}
+
+function renderSessionDetailView(sessionId){
+
+}
 
 //* HANDLE DATA
 function initData(){

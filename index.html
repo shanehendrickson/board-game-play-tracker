@@ -3,6 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .list-item {
+            list-style: none;
+            padding: 12px 16px;
+            margin: 6px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .list-item:hover {
+            background-color: #f5f5f5;
+            border-color: #999;
+        }
+
+        .list-item:active {
+            background-color: #eaeaea;
+        }
+
+        ul.list-view {
+            padding-left: 0;
+        }
+
+    </style>
     <title>Play Tracker</title>
 </head>
 <body>
