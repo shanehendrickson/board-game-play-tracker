@@ -1,31 +1,32 @@
 //* NAVIGATION
 function renderNav() {
-    const nav = document.getElementById("nav");
-    const container = document.createElement("div")
-    nav.innerHTML = ""
+	const nav = document.getElementById("nav");
+	const container = document.createElement("div");
+	nav.innerHTML = "";
 
-    const buttonRow = document.createElement("div")
-    buttonRow.classList.add("button-row")
-    
-    const gamesBtn = document.createElement("button")
-    gamesBtn.textContent = "Games"
-    gamesBtn.addEventListener("click", renderGameListView);
-    buttonRow.appendChild(gamesBtn)
-    
-    const playersBtn = document.createElement("button")
-    playersBtn.textContent = "Players"
-    playersBtn.addEventListener("click", renderPlayerListView);
-    buttonRow.appendChild(playersBtn)
-    
-    const sessionsBtn = document.createElement("button")
-    sessionsBtn.textContent = "Sessions"
-    sessionsBtn.addEventListener("click", renderSessionListView);
-    buttonRow.appendChild(sessionsBtn)
+	const buttonRow = document.createElement("div");
+	buttonRow.classList.add("button-row");
 
+	const gamesBtn = document.createElement("button");
+	gamesBtn.classList.add("btn");
+	gamesBtn.textContent = "Games";
+	gamesBtn.addEventListener("click", renderGameListView);
+	buttonRow.appendChild(gamesBtn);
 
-    container.appendChild(buttonRow)
-    nav.appendChild(container)
+	const playersBtn = document.createElement("button");
+	playersBtn.classList.add("btn");
+	playersBtn.textContent = "Players";
+	playersBtn.addEventListener("click", renderPlayerListView);
+	buttonRow.appendChild(playersBtn);
 
+	const sessionsBtn = document.createElement("button");
+	sessionsBtn.classList.add("btn");
+	sessionsBtn.textContent = "Sessions";
+	sessionsBtn.addEventListener("click", renderSessionListView);
+	buttonRow.appendChild(sessionsBtn);
+
+	container.appendChild(buttonRow);
+	nav.appendChild(container);
 }
 
 function getVal(data, model, id) {
@@ -56,6 +57,7 @@ function populateListField(containerId, items, label) {
 
 	//add button
 	const addBtn = document.createElement("button");
+	addBtn.classList.add("btn");
 	addBtn.type = "button";
 	addBtn.textContent = "Add";
 	container.appendChild(addBtn);
@@ -74,6 +76,7 @@ function populateListField(containerId, items, label) {
 			li.textContent = item;
 
 			const removeBtn = document.createElement("button");
+			removeBtn.classList.add("btn");
 			removeBtn.type = "button";
 			removeBtn.textContent = "x";
 			removeBtn.addEventListener("click", () => {
@@ -119,17 +122,21 @@ function renderListView({ title, items, onSelect, onAdd, getLabel }) {
 		ul.appendChild(li);
 	});
 	app.appendChild(ul);
-
-	const addBtn = document.createElement("button");
-	addBtn.type = "button";
-	addBtn.textContent = `Add ${title.slice(0, -1)}`;
-	addBtn.addEventListener("click", onAdd);
-
 	const buttonRow = document.createElement("div");
-	buttonRow.classList.add("button-row");
-	buttonRow.appendChild(addBtn);
 
-    app.appendChild(buttonRow)
+	//! maybe default onAdd to null, pass in where needed
+	let addBtn;
+	if (title !== "Sessions") {
+		addBtn = document.createElement("button");
+		addBtn.classList.add("btn");
+		addBtn.type = "button";
+		addBtn.textContent = `Add ${title.slice(0, -1)}`;
+		addBtn.addEventListener("click", onAdd);
+		buttonRow.classList.add("button-row");
+		buttonRow.appendChild(addBtn);
+	}
+
+	app.appendChild(buttonRow);
 }
 
 //* List View Routers
@@ -164,7 +171,6 @@ function renderSessionListView() {
 			return `${game.name} — ${date}`;
 		},
 		onSelect: renderSessionDetailView,
-		onAdd: renderSessionFormView,
 	});
 }
 
@@ -188,99 +194,90 @@ function renderGameFormView(mode, gameId) {
 					expansionIds: [],
 				};
 
-	// set up conditional html based on mode 'add' or 'edit'
-    
+	const container = document.createElement("div");
+	container.classList.add("form-view");
 
-	const app = document.getElementById("app");
-	app.innerHTML = "";
+	// Basic Information
+	const infoHeader = document.createElement("div");
+	infoHeader.classList.add("section-header");
+	infoHeader.textContent = "Game Info";
+	container.appendChild(infoHeader);
 
-	const h2 = document.createElement("h2");
-	h2.textContent = mode == "edit" ? "Edit Game" : "New Game";
-	app.appendChild(h2);
+	container.appendChild(
+		createFormRow("Name", "text", game.name, (val) => (game.name = val)),
+	);
+	container.appendChild(
+		createFormRow(
+			"Publisher",
+			"text",
+			game.publisher,
+			(val) => (game.publisher = val),
+		),
+	);
+	container.appendChild(
+		createFormRow(
+			"Designers",
+			"text",
+			game.designers.join(", "),
+			(val) =>
+				(game.designers = val
+					.split(",")
+					.map((s) => s.trim())
+					.filter(Boolean)),
+		),
+	);
 
-	// --- Name field ---
-	const nameLabel = document.createElement("label");
-	nameLabel.textContent = "Game Name: ";
-	const nameInput = document.createElement("input");
-	nameInput.id = "game-name-input";
-	nameInput.value = game.name;
-	app.appendChild(nameLabel);
-	app.appendChild(nameInput);
+	const gameplayHeader = document.createElement("div");
+	gameplayHeader.classList.add("section-header");
+	gameplayHeader.textContent = "Gameplay Elements";
+	container.appendChild(gameplayHeader);
 
-	// --- Designers list ---
-	let designers = [...game.designers];
-	const designersContainer = document.createElement("div");
-	designersContainer.id = "designers-container";
-	app.appendChild(designersContainer);
-	populateListField("designers-container", designers, "Designers");
+	container.appendChild(
+		createListEditor("Roles", game.roles, (updated) => (game.roles = updated)),
+	);
 
-	// -- Publisher field ---
-	const publisherLabel = document.createElement("label");
-	publisherLabel.textContent = "Publisher: ";
-	const publisherInput = document.createElement("input");
-	publisherInput.id = "publisher-input";
-	publisherInput.value = game.publisher;
-	app.appendChild(publisherLabel);
-	app.appendChild(publisherInput);
+	container.appendChild(
+		createListEditor(
+			"Antagonists",
+			game.antagonists,
+			(updated) => (game.antagonists = updated),
+		),
+	);
 
-	// --- Roles list ---
-	let roles = [...game.roles];
-	const rolesContainer = document.createElement("div");
-	rolesContainer.id = "roles-container";
-	app.appendChild(rolesContainer);
-	populateListField("roles-container", roles, "Roles");
+	container.appendChild(
+		createListEditor(
+			"Modules",
+			game.modules,
+			(updated) => (game.modules = updated),
+		),
+	);
 
-	// --- Antagonists list ---
-	let antagonists = [...game.antagonists];
-	const antagonistsContainer = document.createElement("div");
-	antagonistsContainer.id = "antagonists-container";
-	app.appendChild(antagonistsContainer);
-	populateListField("antagonists-container", antagonists, "Antagonists");
+	// button row
+	const buttonRow = document.createElement("div");
+	buttonRow.classList.add("button-row");
 
-	// --- Modules list ---
-	let modules = [...game.modules];
-	const modulesContainer = document.createElement("div");
-	modulesContainer.id = "modules-container";
-	app.appendChild(modulesContainer);
-	populateListField("modules-container", modules, "Modules");
-
-	// --- Expansion IDs list ---
-
-	// --- Save & Cancel buttons ---
 	const saveBtn = document.createElement("button");
-	saveBtn.type = "button";
-	saveBtn.textContent = mode === "edit" ? "Save Changes" : "Add Game";
-	saveBtn.id = "save-game-btn";
-	app.appendChild(saveBtn);
+	saveBtn.classList.add("btn");
+	saveBtn.textContent = "Save";
+	saveBtn.addEventListener("click", () => {
+		saveGame(game);
+		renderGameDetailView(game.id);
+	});
 
 	const cancelBtn = document.createElement("button");
-	cancelBtn.type = "button";
+	cancelBtn.classList.add("btn");
 	cancelBtn.textContent = "Cancel";
 	cancelBtn.addEventListener("click", () => {
 		if (mode === "edit") renderGameDetailView(game.id);
 		else renderGameListView();
 	});
-	app.appendChild(cancelBtn);
 
-	attachGameFormHandlers(game, { designers, roles, antagonists, modules });
+	buttonRow.appendChild(saveBtn);
+	buttonRow.appendChild(cancelBtn);
+	container.appendChild(buttonRow);
+	renderContainer(container);
 }
 
-function attachGameFormHandlers(game, lists) {
-	const saveBtn = document.getElementById("save-game-btn");
-	saveBtn.addEventListener("click", () => {
-		game.name = document.getElementById("game-name-input").value.trim();
-		game.publisher = document.getElementById("publisher-input").value.trim();
-		game.designers = lists.designers;
-		game.roles = lists.roles;
-		game.antagonists = lists.antagonists;
-		game.modules = lists.modules;
-
-		saveGame(game);
-		renderGameDetailView(game.id);
-	});
-}
-
-// add a game detail view
 function renderGameDetailView(gameId) {
 	const data = getData();
 	const game = data.games.find((g) => g.id === gameId);
@@ -304,23 +301,45 @@ function renderGameDetailView(gameId) {
 		(ex) => getVal(data, "expansions", ex).name,
 	);
 	if (expansionNames.length)
-		addListSection(container, "Expansions", expansionNames);
+		addListSection(container, "Expansions", expansionNames, {
+			clickable: true,
+			onClick: (index) => {
+				const expansionId = game.expansionIds[index];
+				renderExpansionDetailView(expansionId);
+			},
+		});
+
+	const logSessionBtn = document.createElement("button");
+	logSessionBtn.classList.add("btn");
+	logSessionBtn.textContent = "Log Session";
+	logSessionBtn.addEventListener("click", () =>
+		renderSessionFormView(null, null, gameId),
+	);
+
+	const sessionButtonRow = document.createElement("div");
+	sessionButtonRow.classList.add("button-row");
+	sessionButtonRow.appendChild(logSessionBtn);
+	container.appendChild(sessionButtonRow);
 
 	const backBtn = document.createElement("button");
+	backBtn.classList.add("btn");
 	backBtn.textContent = "Back";
 	backBtn.addEventListener("click", () => renderGameListView());
 
 	const editBtn = document.createElement("button");
+	editBtn.classList.add("btn");
 	editBtn.textContent = "Edit";
 	editBtn.addEventListener("click", () => renderGameFormView("edit", gameId));
 
 	const addExpBtn = document.createElement("button");
+	addExpBtn.classList.add("btn");
 	addExpBtn.textContent = "Add Expansion";
 	addExpBtn.addEventListener("click", () =>
 		renderExpansionFormView("add", null, gameId),
 	);
 
 	const deleteBtn = document.createElement("button");
+	deleteBtn.classList.add("btn");
 	deleteBtn.textContent = "Delete";
 	deleteBtn.addEventListener("click", () => deleteGame(gameId));
 
@@ -334,7 +353,7 @@ function renderGameDetailView(gameId) {
 
 	container.appendChild(buttonRow);
 
-	render(container);
+	renderContainer(container);
 }
 
 function saveGame(game) {
@@ -342,6 +361,7 @@ function saveGame(game) {
 	const index = data.games.findIndex((g) => g.id === game.id);
 	if (index !== -1) data.games[index] = game;
 	else data.games.push(game);
+	saveData(data);
 }
 
 function deleteGame(gameId) {
@@ -354,6 +374,189 @@ function deleteGame(gameId) {
 }
 
 //* EXPANSIONS
+
+function renderExpansionFormView(mode, expansionId, gameId) {
+	const data = getData();
+
+	const expansion =
+		mode === "edit"
+			? data.expansions.find((e) => e.id === expansionId)
+			: {
+					id: crypto.randomUUID(),
+					gameId,
+					name: "",
+					roles: [],
+					antagonists: [],
+					modules: [],
+				};
+
+	const container = document.createElement("div");
+	container.classList.add("form-view");
+
+	// Basic Information
+	const infoHeader = document.createElement("div");
+	infoHeader.classList.add("section-header");
+	infoHeader.textContent = "Expansion Info";
+	container.appendChild(infoHeader);
+
+	container.appendChild(
+		createFormRow(
+			"Name",
+			"text",
+			expansion.name,
+			(val) => (expansion.name = val),
+		),
+	);
+
+	// Gameplay Information
+	const gameplayHeader = document.createElement("div");
+	gameplayHeader.classList.add("section-header");
+	gameplayHeader.textContent = "Gameplay Elements";
+	container.appendChild(gameplayHeader);
+
+	container.appendChild(
+		createListEditor(
+			"Roles",
+			expansion.roles,
+			(updated) => (expansion.roles = updated),
+		),
+	);
+
+	container.appendChild(
+		createListEditor(
+			"Antagonists",
+			expansion.antagonists,
+			(updated) => (expansion.antagonists = updated),
+		),
+	);
+
+	container.appendChild(
+		createListEditor(
+			"Modules",
+			expansion.modules,
+			(updated) => (expansion.modules = updated),
+		),
+	);
+
+	// Button Row
+	const buttonRow = document.createElement("div");
+	buttonRow.classList.add("button-row");
+
+	const saveBtn = document.createElement("button");
+	saveBtn.classList.add("btn");
+	saveBtn.textContent = "Save";
+	saveBtn.addEventListener("click", () => {
+		// Save Expansion
+		const index = data.expansions.findIndex((e) => e.id === expansionId);
+		if (index !== -1) data.expansions[index] = expansion;
+		else data.expansions.push(expansion);
+
+		// Ensure connection between Game and Expansion
+		const game = data.games.find((g) => g.id === expansion.gameId);
+		if (!game.expansionIds.includes(expansion.id))
+			game.expansionIds.push(expansion.id);
+
+		saveData(data);
+		renderGameDetailView(game.id);
+	});
+
+	const cancelBtn = document.createElement("button");
+	cancelBtn.classList.add("btn");
+	cancelBtn.textContent = "Cancel";
+	cancelBtn.addEventListener("click", () => {
+		if (mode === "edit") renderExpansionDetailView(expansion.id);
+		else renderGameDetailView(expansion.gameId);
+	});
+
+	buttonRow.appendChild(saveBtn);
+	buttonRow.appendChild(cancelBtn);
+	container.appendChild(buttonRow);
+
+	renderContainer(container);
+}
+
+function renderExpansionDetailView(expansionId) {
+	const data = getData();
+	const expansion = data.expansions.find((e) => e.id === expansionId);
+	const game = data.games.find((g) => g.id === expansion.gameId);
+
+	const container = document.createElement("div");
+	container.classList.add("detail-view");
+
+	const title = document.createElement("h2");
+	title.textContent = `${game.name}: ${expansion.name}`;
+	container.appendChild(title);
+
+	if (expansion.roles.length)
+		addListSection(container, "Roles", expansion.roles);
+	if (expansion.antagonists.length)
+		addListSection(container, "Antagonists", expansion.antagonists);
+	if (expansion.modules.length)
+		addListSection(container, "Modules", expansion.modules);
+
+	// Buttons
+	const backBtn = document.createElement("button");
+	backBtn.classList.add("btn");
+	backBtn.textContent = "Back";
+	backBtn.addEventListener("click", () =>
+		renderGameDetailView(expansion.gameId),
+	);
+
+	const editBtn = document.createElement("button");
+	editBtn.classList.add("btn");
+	editBtn.textContent = "Edit";
+	editBtn.addEventListener("click", () =>
+		renderExpansionFormView("edit", expansionId, expansion.gameId),
+	);
+
+	const deleteBtn = document.createElement("button");
+	deleteBtn.classList.add("btn");
+	deleteBtn.textContent = "Delete";
+	deleteBtn.addEventListener("click", () => deleteExpansion(expansionId));
+
+	const buttonRow = document.createElement("div");
+	buttonRow.classList.add("button-row");
+
+	buttonRow.appendChild(backBtn);
+	buttonRow.appendChild(editBtn);
+	buttonRow.appendChild(deleteBtn);
+
+	container.appendChild(buttonRow);
+
+	renderContainer(container);
+}
+
+function saveExpansion(expansion) {
+	const data = getData();
+	const index = data.expansions.findIndex((e) => e.id === expansion.id);
+	if (index !== -1) data.expansions[index] = expansion;
+	else data.expansions.push(expansion);
+}
+
+function deleteExpansion(expansionId) {
+	const data = getData();
+	const expansion = data.expansions.find((e) => e.id === expansionId);
+	const gameId = expansion.gameId;
+
+	// Remove expansion from all sessions
+	data.sessions.forEach((session) => {
+		session.expansionsUsed = session.expansionsUsed.filter(
+			(id) => id !== expansionId,
+		);
+	});
+
+	// Remove expansionId from its parent game's expansionIds array
+	data.games.forEach((game) => {
+		game.expansionIds = game.expansionIds.filter((id) => id !== expansionId);
+	});
+
+	// Delete the expansion itself
+	data.expansions = data.expansions.filter((e) => e.id !== expansionId);
+
+	// Save and return to expansion list
+	saveData(data);
+	renderGameDetailView(gameId);
+}
 
 //* PLAYERS
 function renderPlayerFormView(mode, playerId) {
@@ -368,47 +571,41 @@ function renderPlayerFormView(mode, playerId) {
 					name: "",
 				};
 
-	const app = document.getElementById("app");
-	app.innerHTML = "";
+	const container = document.createElement("div");
+	container.classList.add("form-view");
 
-	const h2 = document.createElement("h2");
-	h2.textContent = mode == "edit" ? "Edit Player" : "New Player";
-	app.appendChild(h2);
+	const infoHeader = document.createElement("div");
+	infoHeader.classList.add("section-header");
+	infoHeader.textContent = "Player Info";
+	container.appendChild(infoHeader);
 
-	const nameLabel = document.createElement("label");
-	nameLabel.textContent = "Player Name: ";
-	const nameInput = document.createElement("input");
-	nameInput.id = "player-name-input";
-	nameInput.value = player.name;
-	app.appendChild(nameLabel);
-	app.appendChild(nameInput);
+	container.appendChild(
+		createFormRow("Name", "text", player.name, (val) => (player.name = val)),
+	);
+
+	const buttonRow = document.createElement("div");
+	buttonRow.classList.add("button-row");
 
 	const saveBtn = document.createElement("button");
-	saveBtn.type = "button";
-	saveBtn.textContent = mode === "edit" ? "Save Changes" : "Add Player";
-	saveBtn.id = "save-game-btn";
-	app.appendChild(saveBtn);
+	saveBtn.classList.add("btn");
+	saveBtn.textContent = "Save";
+	saveBtn.addEventListener("click", () => {
+		savePlayer(player);
+		renderPlayerDetailView(player.id);
+	});
 
 	const cancelBtn = document.createElement("button");
-	cancelBtn.type = "button";
+	cancelBtn.classList.add("btn");
 	cancelBtn.textContent = "Cancel";
 	cancelBtn.addEventListener("click", () => {
 		if (mode === "edit") renderPlayerDetailView(player.id);
 		else renderPlayerListView();
 	});
-	app.appendChild(cancelBtn);
 
-	attachPlayerFormHandlers(player);
-}
-
-function attachPlayerFormHandlers(player) {
-	const saveBtn = document.getElementById("save-game-btn");
-	saveBtn.addEventListener("click", () => {
-		player.name = document.getElementById("player-name-input").value.trim();
-
-		savePlayer(player);
-		renderPlayerDetailView(player.id);
-	});
+	buttonRow.appendChild(saveBtn);
+	buttonRow.appendChild(cancelBtn);
+	container.appendChild(buttonRow);
+	renderContainer(container);
 }
 
 function renderPlayerDetailView(playerId) {
@@ -440,16 +637,19 @@ function renderPlayerDetailView(playerId) {
 
 	// Buttons
 	const backBtn = document.createElement("button");
+	backBtn.classList.add("btn");
 	backBtn.textContent = "Back";
 	backBtn.addEventListener("click", () => renderPlayerListView());
 
 	const editBtn = document.createElement("button");
+	editBtn.classList.add("btn");
 	editBtn.textContent = "Edit";
 	editBtn.addEventListener("click", () =>
 		renderPlayerFormView("edit", sessionId),
 	);
 
 	const deleteBtn = document.createElement("button");
+	deleteBtn.classList.add("btn");
 	deleteBtn.textContent = "Delete";
 	deleteBtn.addEventListener("click", () => deletePlayer(playerId));
 
@@ -462,7 +662,7 @@ function renderPlayerDetailView(playerId) {
 
 	container.appendChild(buttonRow);
 
-	render(container);
+	renderContainer(container);
 }
 
 function savePlayer(player) {
@@ -489,126 +689,163 @@ function deletePlayer(playerId) {
 }
 
 //* SESSIONS
+
 function renderSessionFormView(mode, sessionId, gameId) {
 	const data = getData();
-	let session;
 
-	if (mode === "edit") {
-		session = data.sessions.find((s) => s.id === sessionId);
-		gameId = session.gameId;
-	} else {
-		session = {
-			id: crypto.randomUUID(),
-			gameId: gameId,
-			date: "",
-			participants: [],
-			antagonistsUsed: [],
-			modulesUsed: [],
-			expansionsUsed: [],
-		};
-	}
+	const session =
+		mode === "edit"
+			? data.sessions.find((s) => s.id === sessionId)
+			: {
+					id: crypto.randomUUID(),
+					gameId,
+					date: "",
+					participants: [],
+					antagonistsUsed: [],
+					modulesUsed: [],
+					expansionsUsed: [],
+				};
 
-	const game = data.games.find((g) => g.id === gameId);
+	const game = data.games.find((g) => g.id === session.gameId);
 
-	const app = document.getElementById("app");
-	app.innerHTML = "";
+	const container = document.createElement("div");
+	container.classList.add("form-view");
 
-	const h2 = document.createElement("h2");
-	h2.textContent =
-		mode == "edit" ? "Edit Session" : `Log New ${game.name} Session`;
-	app.appendChild(h2);
+	// Merged Arrays (game + selected expansions)
+	let mergedRoles = [];
+	let mergedAntagonists = [];
+	let mergedModules = [];
 
-	// DATE
-	const dateLabel = document.createElement("label");
-	dateLabel.textContent = "Date: ";
-	const dateInput = document.createElement("input");
-	dateInput.id = "date-input";
-	dateInput.type = "date";
-	dateInput.value = session.date || new Date().toISOString().slice(0, 10);
-	app.appendChild(dateLabel);
-	app.appendChild(dateInput);
+	// Sections to Re-render
+	let participantsSection;
+	let expansionsSection;
+	let antagonistsSection;
+	let modulesSection;
+
+	// Basic Information
+	const infoHeader = document.createElement("div");
+	infoHeader.classList.add("section-header");
+	infoHeader.textContent = `${game.name} Session Info`;
+	container.appendChild(
+		createFormRow("Date", "date", session.date, (val) => (session.date = val)),
+	);
 
 	// PARTICIPANTS
-	const participantsContainer = document.createElement("div");
-	participantsContainer.id = "participants-container";
-	app.appendChild(participantsContainer);
-
-	renderParticipantsSelector(
-		participantsContainer,
+	participantsSection = renderParticipantsSelector(
 		session.participants,
 		data.players,
-		game.roles,
+		mergedRoles,
 	);
+	container.appendChild(participantsSection);
 
-	// ANTAGONISTS
-	const antagonistsContainer = document.createElement("div");
-	antagonistsContainer.id = "antagonists-container";
-	app.appendChild(antagonistsContainer);
+	let selectedExpansionIds = [...session.expansionsUsed];
+	const expansionOptions = data.expansions.filter((e) => e.gameId === gameId);
 
-	renderMultiSelect(
-		antagonistsContainer,
-		"Antagonists Used",
-		session.antagonistsUsed,
-		game.antagonists,
-	);
+	function updateMergedOptions() {
+		const expansions = data.expansions.filter((exp) =>
+			selectedExpansionIds.includes(exp.id),
+		);
 
-	// MODULES
-	const modulesContainer = document.createElement("div");
-	modulesContainer.id = "modules-container";
-	app.appendChild(modulesContainer);
+		// Update merged arrays
+		mergedRoles.length = 0;
+		mergedRoles.push(...game.roles, ...expansions.flatMap((exp) => exp.roles));
 
-	renderMultiSelect(
-		modulesContainer,
-		"Modules Used",
-		session.modulesUsed,
-		game.modules,
-	);
+		mergedAntagonists.length = 0;
+		mergedAntagonists.push(
+			...game.antagonists,
+			...expansions.flatMap((exp) => exp.antagonists),
+		);
+
+		mergedModules.length = 0;
+		mergedModules.push(
+			...game.modules,
+			...expansions.flatMap((exp) => exp.modules),
+		);
+
+		// Re-render
+		const newParticipants = renderParticipantsSelector(
+			session.participants,
+			data.players,
+			mergedRoles,
+		);
+		participantsSection.replaceWith(newParticipants);
+		participantsSection = newParticipants;
+
+		const newAntagonists = renderMultiSelect(
+			"Antagonists Used",
+			session.antagonistsUsed,
+			mergedAntagonists,
+		);
+		antagonistsSection.replaceWith(newAntagonists);
+		antagonistsSection = newAntagonists;
+
+		const newModules = renderMultiSelect(
+			"Modules Used",
+			session.modulesUsed,
+			mergedModules,
+		);
+		modulesSection.replaceWith(newModules);
+		modulesSection = newModules;
+	}
 
 	// EXPANSIONS
-	const expansionsContainer = document.createElement("div");
-	expansionsContainer.id = "expansions-container";
-	app.appendChild(expansionsContainer);
-
-	renderMultiSelect(
-		expansionsContainer,
+	((expansionsSection = renderMultiSelect(
 		"Expansions Used",
-		session.expansionsUsed,
-		data.expansions.filter((e) => e.gameId === gameId),
-	);
+		selectedExpansionIds,
+		expansionOptions,
+		updateMergedOptions,
+	)),
+		container.appendChild(expansionsSection));
 
-	// SAVE / CANCEL
+	// ANTAGONISTS
+	antagonistsSection = renderMultiSelect(
+		"Antagonists Used",
+		session.antagonistsUsed,
+		mergedAntagonists,
+	);
+	container.appendChild(antagonistsSection);
+
+	// MODULES
+	modulesSection = renderMultiSelect(
+		"Modules Used",
+		session.modulesUsed,
+		mergedModules,
+	);
+	container.appendChild(modulesSection);
+
+	updateMergedOptions();
+
+	// button row
+	const buttonRow = document.createElement("div");
+	buttonRow.classList.add("button-row");
+
 	const saveBtn = document.createElement("button");
-	saveBtn.type = "button";
-	saveBtn.textContent = mode === "edit" ? "Save Changes" : "Add Session";
-	saveBtn.id = "save-session-btn";
-	app.appendChild(saveBtn);
+	saveBtn.classList.add("btn");
+	saveBtn.textContent = "Save";
+	saveBtn.addEventListener("click", () => {
+		saveSession(session);
+		renderSessionDetailView(session.id);
+	});
 
 	const cancelBtn = document.createElement("button");
-	cancelBtn.type = "button";
+	cancelBtn.classList.add("btn");
 	cancelBtn.textContent = "Cancel";
 	cancelBtn.addEventListener("click", () => {
-		if (mode === "edit") {
-			renderSessionDetailView(session.id);
-		} else {
-			renderGameDetailView(gameId);
-		}
+		if (mode === "edit") renderSessionDetailView(session.id);
+		else renderGameDetailView(session.gameId);
 	});
-	app.appendChild(cancelBtn);
 
-	attachSessionFormHandlers(mode, session, {
-		dateInput,
-	});
+	buttonRow.appendChild(saveBtn);
+	buttonRow.appendChild(cancelBtn);
+	container.appendChild(buttonRow);
+	renderContainer(container);
 }
 
-function renderParticipantsSelector(
-	container,
-	participants,
-	players,
-	gameRoles,
-) {
-	container.innerHTML = "<h3>Participants</h3>";
+function renderParticipantsSelector(participants, players, mergedRoles) {
+	const container = document.createElement("div");
 
 	const addBtn = document.createElement("button");
+	addBtn.classList.add("btn");
 	addBtn.type = "button";
 	addBtn.textContent = "Add Participant";
 	container.appendChild(addBtn);
@@ -622,6 +859,7 @@ function renderParticipantsSelector(
 
 		participants.forEach((p, index) => {
 			const row = document.createElement("div");
+			row.classList.add("participant-row");
 
 			// Player Select
 			const playerSelect = document.createElement("select");
@@ -638,20 +876,14 @@ function renderParticipantsSelector(
 			row.appendChild(playerSelect);
 
 			// Roles - affect gameplay in some way
-			//TODO - maybe refactor into a single line downdown list?
-			const rolesSelect = document.createElement("select");
-			rolesSelect.multiple = true;
-			gameRoles.forEach((r) => {
-				const opt = document.createElement("option");
-				opt.value = r;
-				opt.textContent = r;
-				if (p.roles && p.roles.includes(r)) opt.selected = true;
-				rolesSelect.appendChild(opt);
-			});
-			rolesSelect.addEventListener("change", () => {
-				p.roles = Array.from(rolesSelect.selectedOptions).map((o) => o.value);
-			});
-			row.appendChild(rolesSelect);
+			const rolesControl = createMultiSelectControl(
+				mergedRoles,
+				p.roles,
+				(newRoles) => {
+					p.roles = [...newRoles];
+				},
+			);
+			row.appendChild(rolesControl);
 
 			// Aliases - cosmetic only - color, seat, etc
 			p.aliases = p.aliases || [];
@@ -661,6 +893,7 @@ function renderParticipantsSelector(
 			row.appendChild(aliasInput);
 
 			const aliasBtn = document.createElement("button");
+			aliasBtn.classList.add("btn");
 			aliasBtn.type = "button";
 			aliasBtn.textContent = "Add";
 			aliasBtn.addEventListener("click", () => {
@@ -678,6 +911,7 @@ function renderParticipantsSelector(
 				const li = document.createElement("li");
 				li.textContent = a;
 				const x = document.createElement("button");
+				x.classList.add("btn");
 				x.type = "button";
 				x.textContent = "x";
 				x.addEventListener("click", () => {
@@ -690,6 +924,7 @@ function renderParticipantsSelector(
 
 			// Remove Participant
 			const removeBtn = document.createElement("button");
+			removeBtn.classList.add("btn");
 			removeBtn.type = "button";
 			removeBtn.textContent = "Remove";
 			removeBtn.addEventListener("click", () => {
@@ -700,6 +935,8 @@ function renderParticipantsSelector(
 
 			list.appendChild(row);
 		});
+		container.appendChild(list);
+		return container;
 	}
 
 	addBtn.addEventListener("click", () => {
@@ -712,22 +949,7 @@ function renderParticipantsSelector(
 	});
 
 	renderList();
-}
-
-function attachSessionFormHandlers(mode, session, fields) {
-	const saveBtn = document.getElementById("save-session-btn");
-
-	saveBtn.addEventListener("click", () => {
-		session.date = fields.dateInput.value.trim();
-
-		saveSession(session);
-
-		if (mode === "edit") {
-			renderSessionDetailView(session.id);
-		} else {
-			renderGameDetailView(session.gameId);
-		}
-	});
+	return container;
 }
 
 function renderSessionDetailView(sessionId) {
@@ -766,16 +988,19 @@ function renderSessionDetailView(sessionId) {
 
 	// Buttons
 	const backBtn = document.createElement("button");
+	backBtn.classList.add("btn");
 	backBtn.textContent = "Back";
 	backBtn.addEventListener("click", () => renderSessionListView());
 
 	const editBtn = document.createElement("button");
+	editBtn.classList.add("btn");
 	editBtn.textContent = "Edit";
 	editBtn.addEventListener("click", () =>
-		renderSessionFormView("edit", sessionId),
+		renderSessionFormView("edit", sessionId, game.id),
 	);
 
 	const deleteBtn = document.createElement("button");
+	deleteBtn.classList.add("btn");
 	deleteBtn.textContent = "Delete";
 	deleteBtn.addEventListener("click", () => deleteSession(sessionId));
 
@@ -788,7 +1013,7 @@ function renderSessionDetailView(sessionId) {
 
 	container.appendChild(buttonRow);
 
-	render(container);
+	renderContainer(container);
 }
 
 function saveSession(session) {
@@ -806,69 +1031,126 @@ function deleteSession(sessionId) {
 	saveData(data);
 	renderSessionListView();
 }
-//* EXPANSIONS
-function saveExpansion(expansion) {
-	const data = getData();
-	const index = data.expansions.findIndex((e) => e.id === expansion.id);
-	if (index !== -1) data.expansions[index] = expansion;
-	else data.expansions.push(expansion);
-}
-
-function deleteExpansion(expansionId) {
-	const data = getData();
-
-	// Remove expansion from all sessions
-	data.sessions.forEach((session) => {
-		session.expansionsUsed = session.expansionsUsed.filter(
-			(id) => id !== expansionId,
-		);
-	});
-
-	// Remove expansionId from its parent game's expansionIds array
-	data.games.forEach((game) => {
-		game.expansionIds = game.expansionIds.filter((id) => id !== expansionId);
-	});
-
-	// Delete the expansion itself
-	data.expansions = data.expansions.filter((e) => e.id !== expansionId);
-
-	// Save and return to expansion list
-	saveData(data);
-	renderExpansionListView();
-}
 
 //* UTILS
 
-function render(container) {
+function sanitizeData(data) {
+	// Ensure top-level arrays exist
+	data.games = Array.isArray(data.games) ? data.games : [];
+	data.players = Array.isArray(data.players) ? data.players : [];
+	data.expansions = Array.isArray(data.expansions) ? data.expansions : [];
+	data.sessions = Array.isArray(data.sessions) ? data.sessions : [];
+
+	// Fix Games
+	data.games.forEach((g) => {
+		g.id = g.id || crypto.randomUUID();
+		g.name = g.name || "";
+		g.designers = Array.isArray(g.designers) ? g.designers : [];
+		g.publisher = g.publisher || "";
+		g.roles = Array.isArray(g.roles) ? g.roles : [];
+		g.antagonists = Array.isArray(g.antagonists) ? g.antagonists : [];
+		g.modules = Array.isArray(g.modules) ? g.modules : [];
+		g.expansionIds = Array.isArray(g.expansionIds) ? g.expansionIds : [];
+	});
+
+	// Fix Expansions
+	data.expansions.forEach((e) => {
+		e.id = e.id || crypto.randomUUID();
+		e.gameId = e.gameId || "";
+		e.name = e.name || "";
+		e.roles = Array.isArray(e.roles) ? e.roles : [];
+		e.antagonists = Array.isArray(e.antagonists) ? e.antagonists : [];
+		e.modules = Array.isArray(e.modules) ? e.modules : [];
+	});
+
+	// Fix Players
+	data.players.forEach((p) => {
+		p.id = p.id || crypto.randomUUID();
+		p.name = p.name || "";
+	});
+
+	// Fix Sessions
+	data.sessions.forEach((s) => {
+		s.id = s.id || crypto.randomUUID();
+		s.gameId = s.gameId || "";
+		s.date = s.date || "";
+		s.expansionsUsed = Array.isArray(s.expansionsUsed) ? s.expansionsUsed : [];
+		s.antagonistsUsed = Array.isArray(s.antagonistsUsed)
+			? s.antagonistsUsed
+			: [];
+		s.modulesUsed = Array.isArray(s.modulesUsed) ? s.modulesUsed : [];
+
+		// Participants
+		s.participants = Array.isArray(s.participants) ? s.participants : [];
+		s.participants.forEach((p) => {
+			p.playerId = p.playerId || "";
+			p.roles = Array.isArray(p.roles) ? p.roles : [];
+			p.aliases = Array.isArray(p.aliases) ? p.aliases : [];
+		});
+	});
+
+	return data;
+}
+
+function renderContainer(container) {
 	const app = document.getElementById("app");
 	app.innerHTML = "";
 	app.appendChild(container);
 }
 
-function renderMultiSelect(container, label, selectedArray, options) {
-	container.innerHTML = `<h3>${label}</h3>`;
+function renderMultiSelect(label, selectedValues, options, onChange) {
+	const container = document.createElement("div");
+	container.classList.add("form-row");
 
-	const select = document.createElement("select");
-	select.multiple = true;
+	const lbl = document.createElement("label");
+	lbl.textContent = label;
+	container.appendChild(lbl);
 
-	options.forEach((opt) => {
-		const value = opt.id || opt;
-		const text = opt.name || opt;
-		const option = document.createElement("option");
-		option.value = value;
-		option.text = text;
-		if (selectedArray.includes(value)) option.selected = true;
-		select.appendChild(option);
-	});
+	const control = createMultiSelectControl(options, selectedValues, onChange);
+	container.appendChild(control);
 
-	select.addEventListener("change", () => {
-		selectedArray.length = 0;
-		selectedArray.push(
-			...Array.from(select.selectedOptions).map((o) => o.value),
-		);
-	});
+	return container;
+}
 
-	container.appendChild(select);
+function createMultiSelectControl(options, selectedValues, onChange) {
+	const wrapperDiv = document.createElement("div");
+	wrapperDiv.classList.add("multi-select");
+
+	const list = document.createElement("div");
+	list.classList.add("multi-select-options");
+	wrapperDiv.appendChild(list);
+
+	function renderOptions() {
+		list.innerHTML = "";
+
+		options.forEach((opt) => {
+			const value = typeof opt === "string" ? opt : opt.id;
+			const label = typeof opt === "string" ? opt : opt.name;
+
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.classList.add("multi-select-option");
+
+            if (selectedValues.includes(value)) btn.classList.add("selected")
+
+			btn.textContent = label;
+
+			btn.addEventListener("click", () => {
+				const idx = selectedValues.indexOf(value);
+                
+				if (idx === -1) {
+					selectedValues.push(value);
+				} else {
+					selectedValues.splice(idx, 1);
+				}
+				if (onChange) onChange(selectedValues);
+				renderOptions();
+			});
+			list.appendChild(btn);
+		});
+	}
+	renderOptions();
+	return wrapperDiv;
 }
 
 function addInlineSection(container, label, value) {
@@ -887,7 +1169,9 @@ function addInlineSection(container, label, value) {
 	container.appendChild(row);
 }
 
-function addListSection(container, label, items) {
+function addListSection(container, label, items, options = {}) {
+	const { clickable = false, onClick = null } = options;
+
 	const header = document.createElement("div");
 	header.classList.add("section-header");
 	header.textContent = label;
@@ -896,13 +1180,93 @@ function addListSection(container, label, items) {
 	const list = document.createElement("ul");
 	list.classList.add("detail-list");
 
-	items.forEach((item) => {
+	items.forEach((item, index) => {
 		const li = document.createElement("li");
 		li.textContent = item;
+
+		if (clickable && onClick) {
+			li.classList.add("list-item");
+			li.addEventListener("click", () => onClick(index));
+		}
+
 		list.appendChild(li);
 	});
 
 	container.appendChild(list);
+}
+
+function createFormRow(labelText, type, value, onChange) {
+	const row = document.createElement("div");
+	row.classList.add("form-row");
+
+	const label = document.createElement("label");
+	label.classList.add("form-label");
+	label.textContent = labelText;
+
+	const input = document.createElement("input");
+	input.type = type;
+	input.value = value;
+	input.addEventListener("input", (e) => onChange(e.target.value));
+
+	row.appendChild(label);
+	row.appendChild(input);
+	return row;
+}
+
+function createListEditor(labelText, items, onChange) {
+	const container = document.createElement("div");
+
+	const header = document.createElement("div");
+	header.classList.add("form-label");
+	header.textContent = labelText;
+	container.appendChild(header);
+
+	const list = document.createElement("ul");
+	list.classList.add("detail-list");
+
+	function refresh() {
+		list.innerHTML = "";
+		items.forEach((item, index) => {
+			const li = document.createElement("li");
+			li.textContent = item;
+
+			const removeBtn = document.createElement("button");
+			removeBtn.classList.add("btn");
+			removeBtn.textContent = "Remove";
+			removeBtn.addEventListener("click", () => {
+				items.splice(index, 1);
+				onChange(items);
+				refresh();
+			});
+			li.appendChild(removeBtn);
+			list.appendChild(li);
+		});
+	}
+	refresh();
+	container.appendChild(list);
+
+	const addRow = document.createElement("div");
+	addRow.classList.add("form-row");
+
+	const input = document.createElement("input");
+	input.type = "text";
+
+	const addBtn = document.createElement("button");
+	addBtn.classList.add("btn");
+	addBtn.textContent = "Add";
+	addBtn.addEventListener("click", () => {
+		if (!input.value.trim()) return;
+		items.push(input.value.trim());
+		onChange(items);
+		input.value = "";
+		refresh();
+	});
+
+	addRow.appendChild(input);
+	addRow.appendChild(addBtn);
+	container.appendChild(addRow);
+
+	return container;
 }
 
 //* HANDLE DATA
@@ -943,7 +1307,11 @@ function initData() {
 }
 
 function getData() {
-	return JSON.parse(localStorage.getItem("playTrackerData"));
+	const raw = localStorage.getItem("playTrackerData");
+	let data = raw ? JSON.parse(raw) : {};
+
+	data = sanitizeData(data);
+	return data;
 }
 
 function saveData(data) {
