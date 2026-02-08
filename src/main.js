@@ -739,6 +739,7 @@ function renderSessionFormView(mode, sessionId, gameId) {
 	container.appendChild(participantsSection);
 
 	let selectedExpansionIds = [...session.expansionsUsed];
+
 	const expansionOptions = data.expansions.filter((e) => e.gameId === gameId);
 
 	function updateMergedOptions() {
@@ -762,7 +763,32 @@ function renderSessionFormView(mode, sessionId, gameId) {
 			...expansions.flatMap((exp) => exp.modules),
 		);
 
-		// Re-render
+		// Keep session.expansionsUsed in sync with UI
+		session.expansionsUsed = [...selectedExpansionIds];
+
+		// Prune invalid selections
+		session.participants.forEach((p) => {
+			p.roles = p.roles.filter((r) => mergedRoles.includes(r));
+		});
+
+		session.antagonistsUsed = session.antagonistsUsed.filter((a) =>
+			mergedAntagonists.includes(a),
+		);
+
+		session.modulesUsed = session.modulesUsed.filter((m) =>
+			mergedModules.includes(m),
+		);
+
+		// Re-render UI
+		const newExpansions = renderMultiSelect(
+			"Expansions Used",
+			selectedExpansionIds,
+			expansionOptions,
+			updateMergedOptions,
+		);
+		expansionsSection.replaceWith(newExpansions);
+		expansionsSection = newExpansions;
+
 		const newParticipants = renderParticipantsSelector(
 			session.participants,
 			data.players,
@@ -1131,13 +1157,13 @@ function createMultiSelectControl(options, selectedValues, onChange) {
 			btn.type = "button";
 			btn.classList.add("multi-select-option");
 
-            if (selectedValues.includes(value)) btn.classList.add("selected")
+			if (selectedValues.includes(value)) btn.classList.add("selected");
 
 			btn.textContent = label;
 
 			btn.addEventListener("click", () => {
 				const idx = selectedValues.indexOf(value);
-                
+
 				if (idx === -1) {
 					selectedValues.push(value);
 				} else {
